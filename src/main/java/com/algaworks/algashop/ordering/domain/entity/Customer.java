@@ -1,5 +1,8 @@
 package com.algaworks.algashop.ordering.domain.entity;
 
+import com.algaworks.algashop.ordering.domain.exception.CustomerArchivedException;
+import com.algaworks.algashop.ordering.domain.exception.ErrorMessages;
+import com.algaworks.algashop.ordering.domain.validator.FieldValidations;
 import org.apache.commons.validator.routines.EmailValidator;
 
 import java.io.Serializable;
@@ -32,6 +35,7 @@ public class Customer implements Serializable {
         this.setPromotionNotificationAllowed(promotionNotificationAllowed);
         this.setRegisteredAt(registeredAt);
         this.archived = false;
+        this.setLoyaltyPoints(0);
     }
 
     public Customer(UUID id, String fullName, LocalDate birthDate, String email, String phone, String document,
@@ -56,6 +60,7 @@ public class Customer implements Serializable {
     }
 
     public void archive(){
+        verifyIfChangeable();
         this.setArchived(true);
         this.setArchivedAt(OffsetDateTime.now());
         this.setFullName("Anonymous");
@@ -63,30 +68,37 @@ public class Customer implements Serializable {
         this.setDocument("00-000-0000");
         this.setEmail(UUID.randomUUID().toString().concat("@gmail.com"));
         this.setBirthDate(null);
-    }
-
-    private void setId(UUID id) {
-        this.id = id;
+        this.setPromotionNotificationAllowed(false);
     }
 
     public void enablePromotionNotifications(){
+        verifyIfChangeable();
         this.setPromotionNotificationAllowed(true);
     }
 
     public void disablePromotionNotifications(){
+        verifyIfChangeable();
         this.setPromotionNotificationAllowed(false);
     }
 
     public void changeEmail(String newEmail){
+        verifyIfChangeable();
         setEmail(newEmail);
     }
 
     public void changePhone(String newPhone){
+        verifyIfChangeable();
         setPhone(newPhone);
     }
 
     public void changeName(String newName){
+        verifyIfChangeable();
         setFullName(newName);
+    }
+
+    private void setId(UUID id) {
+        Objects.requireNonNull(id);
+        this.id = id;
     }
 
     private void setPromotionNotificationAllowed(Boolean promotionNotificationAllowed) {
@@ -95,16 +107,7 @@ public class Customer implements Serializable {
     }
 
     private void setEmail(String email) {
-        Objects.requireNonNull(email);
-
-        if (email.isBlank()){
-            throw new IllegalArgumentException();
-        }
-
-        if(EmailValidator.getInstance().isValid(email)){
-            throw new IllegalArgumentException();
-        }
-
+        FieldValidations.requiresValidEmail(email, ErrorMessages.VALIDATION_ERROR_EMAIL_IS_INVALID);
         this.email = email;
     }
 
@@ -114,10 +117,10 @@ public class Customer implements Serializable {
     }
 
     private void setFullName(String fullName) {
-        Objects.requireNonNull(fullName);
+        Objects.requireNonNull(fullName, ErrorMessages.VALIDATION_ERROR_FULLNAME_IS_NULL);
 
         if (fullName.isBlank()){
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(ErrorMessages.VALIDATION_ERROR_FULLNAME_IS_BLANK);
         }
 
         this.fullName = fullName;
@@ -130,7 +133,7 @@ public class Customer implements Serializable {
         }
 
         if (birthDate.isAfter(LocalDate.now())){
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(ErrorMessages.VALIDATION_ERROR_BIRTHDATE_MUST_IN_PAST);
         }
 
         this.birthDate = birthDate;
@@ -158,6 +161,12 @@ public class Customer implements Serializable {
     private void setLoyaltyPoints(Integer loyaltyPoints) {
         Objects.requireNonNull(loyaltyPoints);
         this.loyaltyPoints = loyaltyPoints;
+    }
+
+    private void verifyIfChangeable() {
+        if(this.archived){
+            throw new CustomerArchivedException(ErrorMessages.ERROR_CUSTOMER_ARCHIVED);
+        }
     }
 
     public UUID id() {
