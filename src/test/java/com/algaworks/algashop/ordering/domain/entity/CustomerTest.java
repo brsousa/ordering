@@ -1,6 +1,5 @@
-package com.algaworks.algashop.ordering;
+package com.algaworks.algashop.ordering.domain.entity;
 
-import com.algaworks.algashop.ordering.domain.entity.Customer;
 import com.algaworks.algashop.ordering.domain.exception.CustomerArchivedException;
 import com.algaworks.algashop.ordering.domain.utility.IdGenerator;
 import org.assertj.core.api.Assertions;
