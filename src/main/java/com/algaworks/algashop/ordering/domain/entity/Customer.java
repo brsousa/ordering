@@ -2,13 +2,11 @@ package com.algaworks.algashop.ordering.domain.entity;
 
 import com.algaworks.algashop.ordering.domain.exception.CustomerArchivedException;
 import com.algaworks.algashop.ordering.domain.exception.ErrorMessages;
-import com.algaworks.algashop.ordering.domain.validator.FieldValidations;
 import com.algaworks.algashop.ordering.domain.vo.*;
+import com.algaworks.algashop.ordering.domain.vo.id.CustomerId;
 import lombok.Builder;
-import org.apache.commons.validator.routines.EmailValidator;
 
 import java.io.Serializable;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 import java.util.UUID;
