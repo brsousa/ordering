@@ -3,9 +3,8 @@ package com.algaworks.algashop.ordering.domain.entity;
 import com.algaworks.algashop.ordering.domain.exception.CustomerArchivedException;
 import com.algaworks.algashop.ordering.domain.exception.ErrorMessages;
 import com.algaworks.algashop.ordering.domain.validator.FieldValidations;
-import com.algaworks.algashop.ordering.domain.vo.CustomerId;
-import com.algaworks.algashop.ordering.domain.vo.FullName;
-import com.algaworks.algashop.ordering.domain.vo.LoyaltyPoints;
+import com.algaworks.algashop.ordering.domain.vo.*;
+import lombok.Builder;
 import org.apache.commons.validator.routines.EmailValidator;
 
 import java.io.Serializable;
@@ -17,33 +16,40 @@ import java.util.UUID;
 public class Customer implements Serializable {
     private CustomerId id;
     private FullName fullName;
-    private LocalDate birthDate;
-    private String email;
-    private String phone;
-    private String document;
+    private BirthDate birthDate;
+    private Email email;
+    private Phone phone;
+    private Document document;
     private Boolean promotionNotificationAllowed;
     private Boolean archived;
     private OffsetDateTime registeredAt;
     private OffsetDateTime archivedAt;
     private LoyaltyPoints loyaltyPoints;
+    private Address address;
 
-    public Customer(FullName fullName, CustomerId id, LocalDate birthDate, String email, String phone, String document,
-                    Boolean promotionNotificationAllowed, OffsetDateTime registeredAt) {
-        this.setFullName(fullName);
-        this.setId(id);
-        this.setBirthDate(birthDate);
-        this.setEmail(email);
-        this.setPhone(phone);
-        this.setDocument(document);
-        this.setPromotionNotificationAllowed(promotionNotificationAllowed);
-        this.setRegisteredAt(registeredAt);
-        this.archived = false;
-        this.setLoyaltyPoints(LoyaltyPoints.ZERO);
+    @Builder(builderClassName = "CreateNewCustomerBuild", builderMethodName = "createNew")
+    private static Customer newCustomer(FullName fullName,BirthDate birthDate, Email email, Phone phone,
+                                     Document document, Boolean promotionNotificationAllowed, Address address) {
+        return new Customer(
+                new CustomerId(),
+                fullName,
+                birthDate,
+                email,
+                phone,
+                document,
+                promotionNotificationAllowed,
+                false,
+                OffsetDateTime.now(),
+                null,
+                LoyaltyPoints.ZERO,
+                address
+        );
     }
 
-    public Customer(CustomerId id, FullName fullName, LocalDate birthDate, String email, String phone, String document,
+    @Builder(builderClassName = "ExistingCustomerBuild", builderMethodName = "existing")
+    public Customer(CustomerId id, FullName fullName, BirthDate birthDate, Email email, Phone phone, Document document,
                     Boolean promotionNotificationAllowed, Boolean archived, OffsetDateTime registeredAt,
-                    OffsetDateTime archivedAt, LoyaltyPoints loyaltyPoints) {
+                    OffsetDateTime archivedAt, LoyaltyPoints loyaltyPoints, Address address) {
         this.setId(id);
         this.setFullName(fullName);
         this.setBirthDate(birthDate);
@@ -55,6 +61,7 @@ public class Customer implements Serializable {
         this.setRegisteredAt(registeredAt);
         this.setArchivedAt(archivedAt);
         this.setLoyaltyPoints(loyaltyPoints);
+        this.setAddress(address);
     }
 
     public void addLoyaltyPoints(LoyaltyPoints loyaltyPoints){
@@ -67,11 +74,17 @@ public class Customer implements Serializable {
         this.setArchived(true);
         this.setArchivedAt(OffsetDateTime.now());
         this.setFullName(new FullName("Anonymous","Anonymous"));
-        this.setPhone("000-000-0000");
-        this.setDocument("00-000-0000");
-        this.setEmail(UUID.randomUUID().toString().concat("@gmail.com"));
+        this.setPhone(new Phone("000-000-0000"));
+        this.setDocument(new Document("00-000-0000"));
+        this.setEmail(new Email(UUID.randomUUID().toString().concat("@gmail.com")));
         this.setBirthDate(null);
         this.setPromotionNotificationAllowed(false);
+        this.setAddress(
+                this.address().toBuilder()
+                        .number("Anonymized")
+                        .complement(null)
+                        .build()
+        );
     }
 
     public void enablePromotionNotifications(){
@@ -84,12 +97,12 @@ public class Customer implements Serializable {
         this.setPromotionNotificationAllowed(false);
     }
 
-    public void changeEmail(String newEmail){
+    public void changeEmail(Email newEmail){
         verifyIfChangeable();
         setEmail(newEmail);
     }
 
-    public void changePhone(String newPhone){
+    public void changePhone(Phone newPhone){
         verifyIfChangeable();
         setPhone(newPhone);
     }
@@ -109,13 +122,11 @@ public class Customer implements Serializable {
         this.promotionNotificationAllowed = promotionNotificationAllowed;
     }
 
-    private void setEmail(String email) {
-        FieldValidations.requiresValidEmail(email, ErrorMessages.VALIDATION_ERROR_EMAIL_IS_INVALID);
+    private void setEmail(Email email) {
         this.email = email;
     }
 
-    private void setPhone(String phone) {
-        Objects.requireNonNull(phone);
+    private void setPhone(Phone phone) {
         this.phone = phone;
     }
 
@@ -124,21 +135,15 @@ public class Customer implements Serializable {
         this.fullName = fullName;
     }
 
-    private void setBirthDate(LocalDate birthDate) {
-        if(birthDate == null){
+    private void setBirthDate(BirthDate birthDate) {
+        if (birthDate == null) {
             this.birthDate = null;
             return;
         }
-
-        if (birthDate.isAfter(LocalDate.now())){
-            throw new IllegalArgumentException(ErrorMessages.VALIDATION_ERROR_BIRTHDATE_MUST_IN_PAST);
-        }
-
         this.birthDate = birthDate;
     }
 
-    private void setDocument(String document) {
-        Objects.requireNonNull(document);
+    private void setDocument(Document document) {
         this.document = document;
     }
 
@@ -161,6 +166,11 @@ public class Customer implements Serializable {
         this.loyaltyPoints = loyaltyPoints;
     }
 
+    public void setAddress(Address address) {
+        Objects.requireNonNull(address);
+        this.address = address;
+    }
+
     private void verifyIfChangeable() {
         if(this.archived){
             throw new CustomerArchivedException(ErrorMessages.ERROR_CUSTOMER_ARCHIVED);
@@ -175,19 +185,19 @@ public class Customer implements Serializable {
         return fullName;
     }
 
-    public LocalDate birthDate() {
+    public BirthDate birthDate() {
         return birthDate;
     }
 
-    public String email() {
+    public Email email() {
         return email;
     }
 
-    public String phone() {
+    public Phone phone() {
         return phone;
     }
 
-    public String document() {
+    public Document document() {
         return document;
     }
 
@@ -209,6 +219,10 @@ public class Customer implements Serializable {
 
     public LoyaltyPoints loyaltyPoints() {
         return loyaltyPoints;
+    }
+
+    public Address address() {
+        return address;
     }
 
     @Override

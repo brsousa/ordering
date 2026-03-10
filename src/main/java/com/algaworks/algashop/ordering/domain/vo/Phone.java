@@ -1,0 +1,20 @@
+package com.algaworks.algashop.ordering.domain.vo;
+
+import java.util.Objects;
+
+public record Phone(
+        String value
+) {
+    public Phone(String value) {
+        Objects.requireNonNull(value, "Phone value must not be null");
+
+        if(value.isBlank()) throw new IllegalArgumentException("Phone value must not be blank");
+
+        this.value = value.trim();
+    }
+
+    @Override
+    public String toString() {
+        return value;
+    }
+}
