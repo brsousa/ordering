@@ -8,8 +8,8 @@ public record Money(
         BigDecimal value
 ) implements Comparable<Money>{
 
-    public static final BigDecimal ZERO = new BigDecimal("0");
-    public static final RoundingMode ROUNDING_MODE = RoundingMode.HALF_EVEN;
+    public static final Money ZERO = new Money(BigDecimal.ZERO);
+    private static final RoundingMode roundingMode = RoundingMode.HALF_EVEN;
 
     public Money(String value){
         this(new BigDecimal(value));
@@ -17,7 +17,7 @@ public record Money(
 
     public Money(BigDecimal value) {
         Objects.requireNonNull(value);
-        this.value = value.setScale(2, ROUNDING_MODE);
+        this.value = value.setScale(2, RoundingMode.HALF_EVEN);
 
         if (this.value.signum() == -1) {
             throw new IllegalArgumentException("value must be greater than zero");
@@ -30,7 +30,7 @@ public record Money(
     }
 
     public Money divide(Money divideValue) {
-        return new  Money(this.value.divide(divideValue.value,ROUNDING_MODE));
+        return new  Money(this.value.divide(divideValue.value, RoundingMode.HALF_EVEN));
     }
 
     public Money multiply(Quantity quantity) {
